@@ -63,18 +63,25 @@ En conclusión, no se tienen elementos suficientes para sugerir que alguno de lo
 
 -   **Selección del punto.** La suma de los últimos dígitos de las cédulas de los dos estudiantes que presentan este trabajo es diez, cuyo módulo cinco es cero, por lo que nos corresponde el problema uno.
 
+# Enunciado.
 
+Se hace un estudio sobre la efectividad de tres marcas de spray para matar moscas. Para ello, cada spray se aplica a un grupo de 100 moscas, y se cuenta el número de moscas muertas, expresado en porcentajes. se hacen seis réplicas y los resultados obtenidos se muestran enseguida.
 
+| Marca de spray | Nro. de moscas muertas |
+|----------------|------------------------|
+| 1              | 72 65 67 75 62 73      |
+| 2              | 55 59 68 70 53 50      |
+| 3              | 64 74 61 58 51 69      |
 
-## III Verficar los supuestos del modelo:
+## III. Verificar los supuestos del modelo:
 
 normalidad, homogeneidad de varianza (Prueba de Bartlett y la prueba de Levene Modificada) e independencia.
 
-la prueba de hipotesis que se tiene para validar el supuesto de normalidad es:
+la prueba de hipótesis que se tiene para validar el supuesto de normalidad es:
 
 $$\left\lbrace\begin{array}{c} H_0 : \epsilon_{ij} \sim Normal \\ H_1: \epsilon_{ij} \sim Normal \end{array}\right. $$
 
-```{r}
+```{r, include=FALSE}
 
 y<-c(72,65,67,75,62,73, 55,59,68,70,53,50,64,74,61,58,51,69)
 factor<-c(rep(1,6),rep(2,6),rep(3,6))
@@ -82,38 +89,40 @@ factor <- as.factor(factor)
 
 ```
 
-```{r Normalidad}
+```{r Normalidad, include=TRUE}
 anv<-aov(y~factor)
 qqnorm(residuals(anv));qqline(residuals(anv))
 shapiro.test(anv$residuals)
 ```
 
-de la gráfica Q-Q plot se evidencia que los cuantiles de la muestra se apegan de forma considerable a los cuantiles teoricos además con un valor p de 0.7598 \> 0.05 para la prueba Shapiro-Wilk, no encontramos evidencias suficientes en contra del supuesto de normalidad de los errores, como los errores ya se mostró, que tienen distribución normal, se usa la prueba de Bartlet, que tiene por hipotesis lo siguente:
+de la gráfica Q-Q plot se evidencia que los cuantiles de la muestra se apegan de forma considerable a los cuantiles teoricos además con un valor p de 0.7598 \> 0.05 para la prueba Shapiro-Wilk, no encontramos evidencias suficientes en contra del supuesto de que los errores se distribuyen normal; con lo anterior en mente se usa la prueba de Bartlet para verificar el supuesto de homogeneidad en varianza, que tiene por hipótesis lo siguente:
 
 $$\left\lbrace\begin{array}{c} H_0 : V(\epsilon_{ij}) = \sigma^2 \\ H_1: V(\epsilon_{ij}) ~no~es~constante \end{array}\right. $$
 
-```{r prueba bartlett homogeneidad varianza}
+```{r prueba bartlett homogeneidad varianza, include=TRUE}
 
 bartlett.test(y~factor)
+
+plot(anv$fitted.values,anv$residuals, xlab="valores ajustados", ylab = "Residuales")
 ```
 
-Como el valor p = 0.5519 \> 0.05 no se rechaza la hipotesis nula, por tanto, los errores tienen varianza costante; pasamos a verificar el cumplimiento del supuesto de independencia de los errores
+Como el valor p = 0.5519 \> 0.05 no se rechaza la hipótesis nula, por tanto no encontramos evidencias suficientes para decir que los errores no tienen varianza costante, además en el gráfico de valores ajustados vs residuales no se observa ningún patrón que el indique que no hay varianza constante. pasamos a verificar el cumplimiento del supuesto de independencia entre los errores, graficamente y usando el test Durbin-Watson el cual tiene como hipótesis:
 
-$$\left\lbrace\begin{array}{c} H_0 : \rho=0 \\ H_1: \rho \neq 0 \end{array}\right. $$
+$$\left\lbrace\begin{array}{c} H_0 : \rho=0 \\ H_1: \rho \neq 0 \end{array}\right. $$,
 
-```{r Prueba independencia}
+donde $\epsilon_t= \rho ~\epsilon_{t-1}+a_t ~con~ a_t\sim NID(0, \sigma_a^2)$
 
+```{r Prueba independencia, include=TRUE}
 require(car)
 durbinWatsonTest(anv)
 plot(anv$fitted.values,anv$residuals, xlab="valores ajustados", ylab = "Residuales")
 ```
 
-Como el valor p = 0.65 \> 0.05 no hay evidencias suficientes para rechazar $H_0$, por lo tanto los errores no tienen correlación de orden uno.
+Como el valor p = 0.65 \> 0.05 no hay evidencias suficientes para rechazar $H_0$, por lo tanto los errores no tienen correlación de orden uno; por tanto no hay evidencias suficientes para rechazar el supuesto de independencia entre los errores.
 
-## IV Tabla ANOVA.
+## IV. Tabla ANOVA.
 
-construir la tabla ANOVA y probar la significancia de los efectos de los tratamientos. Use $\alpha=$0.05. A partir de las expresiones para SSTrat, SSE, etc, verifique los resultados de la tabla ANOVA reportada por el R.
-
+Construir la tabla ANOVA y probar la significancia de los efectos de los tratamientos. Use \$\alpha=\$0.05. A partir de las expresiones para SSTrat, SSE, etc, verifique los resultados de la tabla ANOVA reportada por el R. Construimos la tabla ANOVA como sigue:
 
 ```{r, include=F}
 n<-6
@@ -130,8 +139,7 @@ estf<- mstrat/mse
 pval<-pf(estf,a-1,N-a,lower.tail = F)
 ```
 
-
-```{r}
+```{r include=TRUE}
 tabla<-data.frame("Fuente de variación"= c("Marca de spray", "residuales"),
                   "g.l" = c(a-1,N-a),
                   "Suma Cuad." = c(sstrat, sse),
@@ -142,6 +150,48 @@ tabla<-data.frame("Fuente de variación"= c("Marca de spray", "residuales"),
 tabla
 ```
 
-## V Agrupaciones entre medias de los tratamientos.
-Segun sea el caso, realice agrupaciones entre medias de los tratamientos. Usar el método de Duncan. Plantee un contraste para comparar la media del primer tratamiento con las otras medias y haga la prueba de significancia de dicho contraste,use $\alpha$ = 0.05.
+Queremos probar que los efectos de cada uno de los tratamientos, $\tau_i$ son cero, lo que equivale a la prueba de hipótesis:
 
+$$\left\lbrace\begin{array}{c} H_0 : \tau_1=\tau_2=\tau_3=0 \\ H_1: \tau_i \neq 0 ~para~al ~menos~un~i. \end{array}\right. $$ Con el P valor obtenido en los anteriores calculos y el nivel de significancia que fijamos como $\alpha$=0.05, tenemos que 0.09 \> 0.05, por lo que no rechazamos $H_0$ y concluimos que no hay evidencia suficiente para decir que la marca de spray no influye en el número de moscas muertas.
+
+## V. Agrupaciones entre medias de los tratamientos.
+
+Según sea el caso, realice agrupaciones entre medias de los tratamientos. Usar el método de Duncan. Plantee un contraste para comparar la media del primer tratamiento con las otras medias y haga la prueba de significancia de dicho contraste,use $\alpha$ = 0.05.
+
+Comenzando pues con el test duncan para agrupaciones entre medias obtenemos que:
+
+```{r test duncan , include=TRUE}
+require(agricolae)
+dt<-duncan.test(anv, "factor")
+dt$groups
+```
+
+| Tratamiento | Número de moscas muertas | Grupos |
+|-------------|--------------------------|--------|
+| 1           | 69                       | a      |
+| 3           | 62.8                     | ab     |
+| 2           | 59.2                     | b      |
+
+Parece que el tratamiento 1 y 2 se diferencian lo suficientemente bien entre si, mientras que el tratamiento 3 no queda muy claro a que grupo pertenece, es pertinente hacer una comparación por contrastes que definimos a continuación:
+
+$$\left\lbrace\begin{array}{c} H_0 : \mu_1-\mu_2=0 \\ H_1: \mu_1-\mu_2 \neq 0 \end{array}\right. $$ $$\left\lbrace\begin{array}{c} H_0 : \mu_1-\mu_3=0 \\ H_1: \mu_1-\mu_3 \neq 0 \end{array}\right. $$
+
+```{r contrastes, include=FALSE}
+require(multcomp)
+contraste<-rbind("Marca spray 1 vs Marca spray 2"= c(1,-1,0), 
+                 "Marca spray 1 vs Marca spray 3"= c(1,0,-1))
+columnas<-c("1","2","3")
+filas<-c("Marca spray 1 vs Marca spray 2","marca spray 1 vs Marca spray 3")
+dimnames(contraste)<-list(filas,columnas)
+```
+
+```{r, include=TRUE}
+compar<-glht(anv,linfct = mcp(factor= contraste))
+```
+
+|                                     | Estimate Std. | Error | t value | Pr( \> \|t\|) |
+|---------------|---------------|---------------|---------------|---------------|
+| Marca spray 1 vs Marca spray 2 == 0 | 9.833         | 4.205 | 2.339   | 0.0605        |
+| Marca spray 1 vs Marca spray 3 == 0 | 6.167         | 4.205 | 1.467   | 0.2729        |
+
+Siguiendo el criterio donde si $|T_{cal}|> t_{\frac{\alpha}{2},N-a}$ se rechaza la hipótesis nula usando un nivel de significancia de $\alpha$= 0.05, para la comparación de la marca 1 y la marca 2 tenemos que: $|2.339|>2.13145$ por lo tanto rechazamos $H_0$, decimos que la media del tratamiento 1 es diferente de la media del tratamiento 2; para la comparación de la Marca spray 1 vs Marca spray 3 obtenemos que: $|1.467|< 2.13145$ en este caso *No* rechazamos la hipótesis nula decimos que la media de los tratamientos 1 y 3 son iguales, con este resultado y teniendo en cuentas los resultados arrojados en el test de Duncan podriamos decir que existen dos grupos: el primero que contiene solamente al tratamiento 2, es decir la marca de Spray 2, y un segundo que contiene a los tratamientos 1 y 3, es decir las marcas de spray 1 y 3.
