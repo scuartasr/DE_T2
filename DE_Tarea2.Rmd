@@ -62,3 +62,86 @@ En conclusión, no se tienen elementos suficientes para sugerir que alguno de lo
 # Punto dos. Problema uno.
 
 -   **Selección del punto.** La suma de los últimos dígitos de las cédulas de los dos estudiantes que presentan este trabajo es diez, cuyo módulo cinco es cero, por lo que nos corresponde el problema uno.
+
+
+
+
+## III Verficar los supuestos del modelo:
+
+normalidad, homogeneidad de varianza (Prueba de Bartlett y la prueba de Levene Modificada) e independencia.
+
+la prueba de hipotesis que se tiene para validar el supuesto de normalidad es:
+
+$$\left\lbrace\begin{array}{c} H_0 : \epsilon_{ij} \sim Normal \\ H_1: \epsilon_{ij} \sim Normal \end{array}\right. $$
+
+```{r}
+
+y<-c(72,65,67,75,62,73, 55,59,68,70,53,50,64,74,61,58,51,69)
+factor<-c(rep(1,6),rep(2,6),rep(3,6))
+factor <- as.factor(factor)
+
+```
+
+```{r Normalidad}
+anv<-aov(y~factor)
+qqnorm(residuals(anv));qqline(residuals(anv))
+shapiro.test(anv$residuals)
+```
+
+de la gráfica Q-Q plot se evidencia que los cuantiles de la muestra se apegan de forma considerable a los cuantiles teoricos además con un valor p de 0.7598 \> 0.05 para la prueba Shapiro-Wilk, no encontramos evidencias suficientes en contra del supuesto de normalidad de los errores, como los errores ya se mostró, que tienen distribución normal, se usa la prueba de Bartlet, que tiene por hipotesis lo siguente:
+
+$$\left\lbrace\begin{array}{c} H_0 : V(\epsilon_{ij}) = \sigma^2 \\ H_1: V(\epsilon_{ij}) ~no~es~constante \end{array}\right. $$
+
+```{r prueba bartlett homogeneidad varianza}
+
+bartlett.test(y~factor)
+```
+
+Como el valor p = 0.5519 \> 0.05 no se rechaza la hipotesis nula, por tanto, los errores tienen varianza costante; pasamos a verificar el cumplimiento del supuesto de independencia de los errores
+
+$$\left\lbrace\begin{array}{c} H_0 : \rho=0 \\ H_1: \rho \neq 0 \end{array}\right. $$
+
+```{r Prueba independencia}
+
+require(car)
+durbinWatsonTest(anv)
+plot(anv$fitted.values,anv$residuals, xlab="valores ajustados", ylab = "Residuales")
+```
+
+Como el valor p = 0.65 \> 0.05 no hay evidencias suficientes para rechazar $H_0$, por lo tanto los errores no tienen correlación de orden uno.
+
+## IV Tabla ANOVA.
+
+construir la tabla ANOVA y probar la significancia de los efectos de los tratamientos. Use $\alpha=$0.05. A partir de las expresiones para SSTrat, SSE, etc, verifique los resultados de la tabla ANOVA reportada por el R.
+
+
+```{r, include=F}
+n<-6
+a<-3
+N<-n*a
+yi.<-c(sum(y[1:6]),sum(y[7:12]),sum(y[13:18]))
+y..<-sum(y)
+sstrat<-sum(yi^2)/n - (y..^2)/N
+sst <- sum(y^2) - ((y..^2)/N)
+sse<- sst-sstrat
+mstrat<-sstrat/(a-1)
+mse<-sse/(N-a)
+estf<- mstrat/mse
+pval<-pf(estf,a-1,N-a,lower.tail = F)
+```
+
+
+```{r}
+tabla<-data.frame("Fuente de variación"= c("Marca de spray", "residuales"),
+                  "g.l" = c(a-1,N-a),
+                  "Suma Cuad." = c(sstrat, sse),
+                  "Media Cuad." = c(mstrat,mse),
+                  "EstF" = c(estf, NA),
+                  "P- Value" = c(pval,NA)
+                  )
+tabla
+```
+
+## V Agrupaciones entre medias de los tratamientos.
+Segun sea el caso, realice agrupaciones entre medias de los tratamientos. Usar el método de Duncan. Plantee un contraste para comparar la media del primer tratamiento con las otras medias y haga la prueba de significancia de dicho contraste,use $\alpha$ = 0.05.
+
